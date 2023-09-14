@@ -1,0 +1,62 @@
+# frozen_string_literal: true
+
+class <%= name.pluralize %>Controller < ApplicationController
+  before_action :authorize!
+  before_action :set_resource, only: %i[edit update destroy]
+
+  def index
+    render :index, locals: { <%= name.pluralize %>: resources(<%= name.capitalize %>) }
+  end
+
+  def new
+    <%= name %> = <%= name.capitalize %>.new
+    <%= name %>.initialize_address
+
+    render :new, locals: { <%= name %>: <%= name %> }
+  end
+
+  def edit
+    render :edit, locals: { <%= name %>: @<%= name %> }
+  end
+
+  def create
+    <%= name %> = <%= name %>.new
+    <%= name %>.initialize_address
+    <%= name %>_form = <%= name %>Form.new(<%= name %>: <%= name %>)
+
+    if <%= name %>_form.save(permitted_attributes(<%= name %>).merge(tenant: current_tenant))
+      redirect_to companies_path,
+                  notice: t('activerecord.messages.create.success', resource: <%= name %>.model_name.human.downcase)
+    else
+      render :new, locals: { <%= name %>: <%= name %> }, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    if @<%= name %>.update(permitted_attributes(<%= name %>))
+      redirect_to edit_<%= name %>_path(@<%= name %>),
+                  notice: t('activerecord.messages.update.success', resource: <%= name %>.model_name.human.downcase)
+    else
+      render :edit, locals: { <%= name %>: @<%= name %> }, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    if @<%= name %>.discard
+      redirect_to companies_path,
+                  notice: t('activerecord.messages.destroy.success', resource: <%= name %>.model_name.human.downcase)
+    else
+      redirect_to edit_<%= name %>_path(@<%= name %>), flash: { alert: @<%= name %>.errors.full_messages.join(' ') }
+    end
+  end
+
+  private
+
+  def authorize!
+    authorize :<%= name %>
+  end
+
+  def set_resource
+    @<%= name %> = raw_resources(<%= name %>).find(params[:id])
+  end
+end
